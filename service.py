@@ -50,7 +50,6 @@ class TransactionService:
                 self.handle_transaction(task)
             except Exception as e:
                 logging.error(e)
-                raise e
             finally:
                 self.task_queue.task_done()
 
@@ -61,7 +60,7 @@ class TransactionService:
             Helper function to connect to 'bank.db' database
             - Returns cursor
         '''
-        connection = sqlite3.connect('bank.db')
+        connection = sqlite3.connect('bank.db', timeout=10)
         cursor = connection.cursor()
         return connection, cursor
 
@@ -93,22 +92,15 @@ class TransactionService:
                 # Validate transaction
                 if from_balance < amount:
                     raise ValueError("Insufficient funds")
-                else:
-                    cursor.execute('''
-                        UPDATE accounts 
-                        SET balance = balance - ?
-                        WHERE id = ?    
-                    ''', (amount, from_account)) 
-
-                # Get To balance
-                cursor.execute('''
-                    SELECT balance
-                    FROM accounts 
-                    WHERE id = ?    
-                ''', (to_account,))
-                to_balance = cursor.fetchone()[0]
                 
-                # Complete transaction
+                # Update From balance
+                cursor.execute('''
+                    UPDATE accounts 
+                    SET balance = balance - ?
+                    WHERE id = ?    
+                ''', (amount, from_account)) 
+              
+                # Update to balance
                 cursor.execute('''
                     UPDATE accounts 
                     SET balance = balance + ?
@@ -126,4 +118,3 @@ class TransactionService:
             # Close connection and cursor
             cursor.close()
             connection.close()
-
