@@ -3,6 +3,7 @@ from socket import *
 from threading import Thread, Lock
 from datetime import datetime
 from queue import Queue
+import logging
 
 class TransactionServer:
     def __init__(self, worker_count=4):
@@ -30,7 +31,12 @@ class TransactionServer:
     def loop(self):
         while True:
             task = self.task_queue.get()
-            self.handle_transaction(task)
+            try:
+                self.handle_transaction(task)
+            except Exception as e:
+                print(e)
+            finally:
+                self.task_queue.task_done()
 
 
     # ------------------------------------------- SQLite ------------------------------------------------------
@@ -52,41 +58,37 @@ class TransactionServer:
         connection, cursor = self.connect()
         from_account, to_account, amount = task["from"], task["to"], task["amount"]
         
-        # Log transaction
-        data = [from_account, to_account, amount, datetime.now()]
         with self.lock:
+            # Log transaction
+            data = [from_account, to_account, amount, datetime.now()]
             cursor.execute('''
                 INSERT INTO transactions (from_account, to_account, amount, timestamp) VALUES (?,?,?,?)
             ''', data)
 
-        # Update to and from accounts
-        
-        # From Account
-        with self.lock:
+            # Update to and from accounts
+            
+            # From Account
             cursor.execute('''
                 SELECT balance
                 FROM accounts 
                 WHERE id = ?    
             ''', (from_account,))
-        from_balance = cursor.fetchone()[0] # fetchone returns a tuple
-        
-        with self.lock:
+            from_balance = cursor.fetchone()[0] # fetchone returns a tuple
+            
             cursor.execute('''
                 UPDATE accounts 
                 SET balance = ?
                 WHERE id = ?    
             ''', (from_balance-amount, from_account)) 
 
-        # To Account
-        with self.lock:
+            # To Account
             cursor.execute('''
                 SELECT balance
                 FROM accounts 
                 WHERE id = ?    
             ''', (to_account,))
-        to_balance = cursor.fetchone()
-        
-        with self.lock:
+            to_balance = cursor.fetchone()[0]
+            
             cursor.execute('''
                 UPDATE accounts 
                 SET balance = ?

@@ -1,2 +1,3 @@
-*.db
+bank.db
 notes.md
+test.py
