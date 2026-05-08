@@ -3,14 +3,21 @@ from socket import *
 from threading import Thread, Lock
 from datetime import datetime
 from queue import Queue
+import logging
 
-class TransactionServer:
+# Logging setup
+logging.basicConfig(filename='service.log', filemode='w', level=logging.INFO)
+
+
+class TransactionService:
     def __init__(self, worker_count=4):
         # define workers and initialize queue
         self.worker_count = worker_count
         self.task_queue = Queue()
         self.workers = []
         self.lock = Lock()
+ 
+    # ------------------------------------------- Multithreading Functions -------------------------------------------------
 
     def start(self):
         # start threads
@@ -30,10 +37,15 @@ class TransactionServer:
     def loop(self):
         while True:
             task = self.task_queue.get()
-            self.handle_transaction(task)
+            try:
+                self.handle_transaction(task)
+            except Exception as e:
+                logging.error(e)
+                raise e
+            finally:
+                self.task_queue.task_done()
 
-
-    # ------------------------------------------- SQLite ------------------------------------------------------
+    # ------------------------------------------- SQLite Functions ------------------------------------------------------
 
     def connect(self):
         '''
@@ -52,48 +64,57 @@ class TransactionServer:
         connection, cursor = self.connect()
         from_account, to_account, amount = task["from"], task["to"], task["amount"]
         
-        # Log transaction
-        data = [from_account, to_account, amount, datetime.now()]
-        with self.lock:
-            cursor.execute('''
-                INSERT INTO transactions (from_account, to_account, amount, timestamp) VALUES (?,?,?,?)
-            ''', data)
+        try:
+            with self.lock: # safely access db (without race conditions)
+                # Log transaction
+                data = [from_account, to_account, amount, datetime.now()]
+                cursor.execute('''
+                    INSERT INTO transactions (from_account, to_account, amount, timestamp) VALUES (?,?,?,?)
+                ''', data)
 
-        # Update to and from accounts
-        
-        # From Account
-        with self.lock:
-            cursor.execute('''
-                SELECT balance
-                FROM accounts 
-                WHERE id = ?    
-            ''', (from_account,))
-        from_balance = cursor.fetchone()[0] # fetchone returns a tuple
-        
-        with self.lock:
-            cursor.execute('''
-                UPDATE accounts 
-                SET balance = ?
-                WHERE id = ?    
-            ''', (from_balance-amount, from_account)) 
+                # Get From balance
+                cursor.execute('''
+                    SELECT balance
+                    FROM accounts 
+                    WHERE id = ?    
+                ''', (from_account,))
+                
+                from_balance = cursor.fetchone()[0] # fetchone returns a tuple
+                
+                # Validate transaction
+                if from_balance < amount:
+                    raise ValueError("Insufficient funds")
+                else:
+                    cursor.execute('''
+                        UPDATE accounts 
+                        SET balance = ?
+                        WHERE id = ?    
+                    ''', (from_balance-amount, from_account)) 
 
-        # To Account
-        with self.lock:
-            cursor.execute('''
-                SELECT balance
-                FROM accounts 
-                WHERE id = ?    
-            ''', (to_account,))
-        to_balance = cursor.fetchone()
-        
-        with self.lock:
-            cursor.execute('''
-                UPDATE accounts 
-                SET balance = ?
-                WHERE id = ?    
-            ''', (to_balance+amount, to_account)) 
+                # Get To balance
+                cursor.execute('''
+                    SELECT balance
+                    FROM accounts 
+                    WHERE id = ?    
+                ''', (to_account,))
+                to_balance = cursor.fetchone()[0]
+                
+                # Complete transaction
+                cursor.execute('''
+                    UPDATE accounts 
+                    SET balance = ?
+                    WHERE id = ?    
+                ''', (to_balance+amount, to_account)) 
 
-        # Commit and close
-        connection.commit()
-        cursor.close()
-        connection.close()
+                # Commit changes
+                connection.commit()
+        except Exception as e:
+            # Rollback if exception occurs
+            connection.rollback()
+            logging.error(e)
+            raise e
+        finally:
+            # Close connection and cursor
+            cursor.close()
+            connection.close()
+
