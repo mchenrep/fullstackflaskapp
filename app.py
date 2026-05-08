@@ -13,15 +13,13 @@ def home():
 def start():
     return redirect(url_for('home'))
 
-@app.route("/transact", methods=["GET"])
+@app.route("/transfer", methods=["GET"])
 def transact_form():
-    return render_template("transact_form.html")
+    return render_template("transfer.html")
 
 @app.route("/transact", methods=["POST"])
 def transact_result():
-    if request.form["from"] == "" or request.form["to"] == "" or request.form["amount"] == "":
-        return render_template("transact_error.html")
-    return render_template("transact_success.html", from_account = request.form["from"], to_account = request.form("to"), amount = request.form("amount"))
+   pass
 
 
 

@@ -113,8 +113,32 @@ class TransactionService:
             # Rollback if exception occurs
             connection.rollback()
             logging.error(e)
-            raise e
+            raise 
         finally:
             # Close connection and cursor
             cursor.close()
             connection.close()
+
+    def get_accounts(self):
+        '''
+            Gets all accounts from the 'accounts' table in the db.
+        '''
+        connection, cursor = self.connect()
+        connection.row_factory = sqlite3.Row # converts return into dictionary-like indexing instead of tuples
+
+        try:
+            cursor.execute('''
+                SELECT *
+                FROM accounts
+            ''')
+            accounts = cursor.fetchall()
+            return accounts
+        except Exception as e:
+            logging.error(e)
+            raise 
+        finally:
+            cursor.close()
+            connection.close()
+
+    def get_accounts_by_id(self):
+        pass
