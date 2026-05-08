@@ -1,5 +1,4 @@
 import sqlite3
-from socket import *
 from threading import Thread, Lock
 from datetime import datetime
 from queue import Queue
@@ -20,13 +19,18 @@ class TransactionService:
     # ------------------------------------------- Multithreading Functions -------------------------------------------------
 
     def start(self):
-        # start threads
+        '''
+            Starts threads based on worker count
+        '''
         for _ in range(self.worker_count):
             thread = Thread(target=self.loop, daemon=True)
             thread.start()
             self.workers.append(thread)
 
     def submit_task(self, from_account, to_account, amount):
+        '''
+            Creates transaction tasks and submits them to queue
+        '''
         task = {
             "from" : from_account,
             "to" : to_account,
@@ -35,13 +39,17 @@ class TransactionService:
         self.task_queue.put(task)
 
     def loop(self):
+        '''
+            Multithreading loop to accept tasks from queue indefinitely
+            - Contains try/except/finally block to safely handle transaction tasks
+            - Signals task completion to unblock .join calls
+        '''
         while True:
             task = self.task_queue.get()
             try:
                 self.handle_transaction(task)
             except Exception as e:
                 logging.error(e)
-                raise e
             finally:
                 self.task_queue.task_done()
 
@@ -52,7 +60,7 @@ class TransactionService:
             Helper function to connect to 'bank.db' database
             - Returns cursor
         '''
-        connection = sqlite3.connect('bank.db')
+        connection = sqlite3.connect('bank.db', timeout=10)
         cursor = connection.cursor()
         return connection, cursor
 
@@ -84,27 +92,20 @@ class TransactionService:
                 # Validate transaction
                 if from_balance < amount:
                     raise ValueError("Insufficient funds")
-                else:
-                    cursor.execute('''
-                        UPDATE accounts 
-                        SET balance = ?
-                        WHERE id = ?    
-                    ''', (from_balance-amount, from_account)) 
-
-                # Get To balance
-                cursor.execute('''
-                    SELECT balance
-                    FROM accounts 
-                    WHERE id = ?    
-                ''', (to_account,))
-                to_balance = cursor.fetchone()[0]
                 
-                # Complete transaction
+                # Update From balance
                 cursor.execute('''
                     UPDATE accounts 
-                    SET balance = ?
+                    SET balance = balance - ?
                     WHERE id = ?    
-                ''', (to_balance+amount, to_account)) 
+                ''', (amount, from_account)) 
+              
+                # Update to balance
+                cursor.execute('''
+                    UPDATE accounts 
+                    SET balance = balance + ?
+                    WHERE id = ?    
+                ''', (amount, to_account)) 
 
                 # Commit changes
                 connection.commit()
@@ -117,4 +118,3 @@ class TransactionService:
             # Close connection and cursor
             cursor.close()
             connection.close()
-
