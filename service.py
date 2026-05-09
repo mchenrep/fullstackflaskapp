@@ -60,6 +60,7 @@ class TransactionService:
             - Returns cursor
         '''
         connection = sqlite3.connect('bank.db', timeout=5, check_same_thread=False)
+        connection.row_factory = sqlite3.Row # converts return into dictionary-like indexing instead of tuples
         cursor = connection.cursor()
         return connection, cursor
 
@@ -123,7 +124,7 @@ class TransactionService:
             Gets all accounts from the 'accounts' table in the db.
         '''
         connection, cursor = self.connect()
-        connection.row_factory = sqlite3.Row # converts return into dictionary-like indexing instead of tuples
+        
 
         try:
             cursor.execute('''
@@ -139,5 +140,24 @@ class TransactionService:
             cursor.close()
             connection.close()
 
-    def get_accounts_by_id(self):
-        pass
+    def get_account_by_id(self, id):
+        '''
+            Gets account details from a single account from the 'accounts' table in the db based on id.
+        '''
+        connection, cursor = self.connect()
+        
+        try:
+            cursor.execute('''
+                SELECT *
+                FROM accounts
+                WHERE id = ?
+            ''', (id,))
+            account_details = cursor.fetchone()
+            return account_details
+        except Exception as e:
+            logging.error(e)
+            raise 
+        finally:
+            cursor.close()
+            connection.close()
+        

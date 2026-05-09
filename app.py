@@ -1,5 +1,5 @@
 from flask import Flask
-from flask import render_template, redirect, url_for, request
+from flask import render_template, redirect, url_for, request, abort
 from service import TransactionService
 
 app = Flask(__name__)
@@ -49,6 +49,21 @@ def success():
 @app.route("/error")
 def error():
     return render_template("error.html")
+
+@app.route("/accounts")
+def accounts():
+    accounts = service.get_accounts()
+    return render_template("accounts.html", accounts=accounts)
+
+@app.route("/account/<int:id>")
+def account(id):
+    details = service.get_account_by_id(id)
+    
+    if details is None:
+        # if account doesn't exist, throw 404 error
+        abort(404)
+    
+    return render_template("account.html", details=details)
     
 if __name__ == "__main__":
     app.run(debug=True)
