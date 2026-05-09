@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Bank of Flask</title>
+    </head>
+    <body>
+        {% if messages %}
+        <ul class="messages">
+            {% for m in messages %}
+            <li class="{{message.tags}}">{{ m }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        
+        <nav>
+            <a href="{{ url_for('home') }}">Home</a>
+            <a href="{{ url_for('transfer') }}">Make Transfer</a>
+        </nav>
+        
+        {% block content %}
+        {% endblock %}
+    </body>
+</html>

@@ -4,26 +4,51 @@ from service import TransactionService
 
 app = Flask(__name__)
 service = TransactionService()
+service.start()
 
 @app.route("/")
 def home():
     return render_template("home.html")
 
-@app.route("/start", methods = ["GET"])
-def start():
-    return redirect(url_for('home'))
+@app.route("/transfer", methods=["GET", "POST"])
+def transfer():
+    if request.method == "GET":
+        # return transfer form
+        return render_template("transfer.html")
+    if request.method == "POST":
+        try:
+            # validate form
+            to_account = int(request.form["to"])
+            from_account = int(request.form["from"])
+            amount = int(request.form["amount"])
 
-@app.route("/transact", methods=["GET"])
-def transact_form():
-    return render_template("transact_form.html")
+            if amount <= 0:
+                return redirect(url_for("error"))
 
-@app.route("/transact", methods=["POST"])
-def transact_result():
-    if request.form["from"] == "" or request.form["to"] == "" or request.form["amount"] == "":
-        return render_template("transact_error.html")
-    return render_template("transact_success.html", from_account = request.form["from"], to_account = request.form("to"), amount = request.form("amount"))
+            # submit task to back end
+            service.submit_task(from_account, to_account, amount)
+            
+            # redirect to transfer request success page
+            return redirect(url_for(
+                "success",
+                to_account=to_account,
+                from_account=from_account,
+                amount=amount
+            ))
+        except:
+            # return error page for any errors
+            return redirect(url_for("error"))
 
+@app.route("/success")
+def success():
+    to_account = request.args.get("to_account")
+    from_account = request.args.get("from_account")
+    amount = request.args.get("amount")
+    return render_template("success.html", to_account = to_account, from_account = from_account, amount = amount)
 
-
+@app.route("/error")
+def error():
+    return render_template("error.html")
+    
 if __name__ == "__main__":
     app.run(debug=True)

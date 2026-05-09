@@ -5,8 +5,7 @@ from queue import Queue
 import logging
 
 # Logging setup
-logging.basicConfig(filename='service.log', filemode='w', level=logging.INFO)
-
+logging.basicConfig(level=logging.INFO)
 
 class TransactionService:
     def __init__(self, worker_count=4):
@@ -60,7 +59,7 @@ class TransactionService:
             Helper function to connect to 'bank.db' database
             - Returns cursor
         '''
-        connection = sqlite3.connect('bank.db', timeout=10)
+        connection = sqlite3.connect('bank.db', timeout=5, check_same_thread=False)
         cursor = connection.cursor()
         return connection, cursor
 
@@ -113,8 +112,32 @@ class TransactionService:
             # Rollback if exception occurs
             connection.rollback()
             logging.error(e)
-            raise e
+            raise 
         finally:
             # Close connection and cursor
             cursor.close()
             connection.close()
+
+    def get_accounts(self):
+        '''
+            Gets all accounts from the 'accounts' table in the db.
+        '''
+        connection, cursor = self.connect()
+        connection.row_factory = sqlite3.Row # converts return into dictionary-like indexing instead of tuples
+
+        try:
+            cursor.execute('''
+                SELECT *
+                FROM accounts
+            ''')
+            accounts = cursor.fetchall()
+            return accounts
+        except Exception as e:
+            logging.error(e)
+            raise 
+        finally:
+            cursor.close()
+            connection.close()
+
+    def get_accounts_by_id(self):
+        pass
