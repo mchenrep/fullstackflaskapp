@@ -5,8 +5,7 @@ from queue import Queue
 import logging
 
 # Logging setup
-logging.basicConfig(filename='service.log', filemode='w', level=logging.INFO)
-
+logging.basicConfig(level=logging.INFO)
 
 class TransactionService:
     def __init__(self, worker_count=4):
@@ -60,7 +59,7 @@ class TransactionService:
             Helper function to connect to 'bank.db' database
             - Returns cursor
         '''
-        connection = sqlite3.connect('bank.db', timeout=10)
+        connection = sqlite3.connect('bank.db', timeout=5, check_same_thread=False)
         cursor = connection.cursor()
         return connection, cursor
 
