@@ -1,27 +1,44 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>{{ details["name"] }}</h1>
-    <p>id: {{ details["id"] }}</p>
-    <p>balance: {{ details["balance"] }}</p>
-
+    <div class="card">
+        <div class="card-body">
+            <h1 class="card-header">{{ details["name"] }}</h1>
+            <p class="card-text">id: {{ details["id"] }}</p>
+            <p class="card-text">balance: {{ details["balance"] }}</p>
+        </div>
+        
+    </div>
+    
     <h1>Transaction History</h1>
-    <table>
-        <tr>
-            <th>ID</th>
-            <th>From</th>
-            <th>To</th>
-            <th>Amount</th>
-            <th>Timestamp</th>
-        </tr>
-        {% for transaction in transactions %}
-        <tr>
-            <td>{{ transaction["id"] }}</td>
-            <td>{{ transaction["from_account"] }}</td>
-            <td>{{ transaction["to_account"] }}</td>
-            <td>{{ transaction["amount"] }}</td>
-            <td>{{ transaction["timestamp"] }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+    {% if transactions %}
+        <table class="table table-hover table-bordered">
+            <tr>
+                <th>Direction</th>
+                <th>ID</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Amount</th>
+                <th>Timestamp</th>
+            </tr>
+            {% for transaction in transactions %}
+            <tr>
+                <td>
+                    {% if transaction["from_account"] == details["id"] %}
+                        Sent
+                    {% else %}
+                        Received
+                    {% endif %}
+                </td>
+                <td>{{ transaction["id"] }}</td>
+                <td>{{ transaction["from_account"] }}</td>
+                <td>{{ transaction["to_account"] }}</td>
+                <td>{{ transaction["amount"] }}</td>
+                <td>{{ transaction["timestamp"] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>No transaction history available.</p>
+    {% endif %}
 {% endblock %}
