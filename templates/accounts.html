@@ -1,14 +1,20 @@
 {% extends "base.html" %}
 
 {% block content %}
-<ul>
-    {% for account in accounts %}
-        <li>
-            <a href="{{ url_for('account', id=account['id']) }}">View</a>
-            <a>{{ account["id"] }}</a>
-            <a>{{ account["name"] }}</a>
-            <a>{{ account["balance"] }}</a>
-        </li>
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Balance</th>
+        <th>Details</th>
+    </tr>
+    {% for account in accounts %} 
+        <tr>
+            <td><a >{{ account["id"] }}</a></td>
+            <td><a>{{ account["name"] }}</a></td>
+            <td><a>{{ account["balance"] }}</a></td>
+            <td><a href="{{ url_for('account', id=account['id']) }}">View</a></td>
+        </tr>
     {% endfor %}
-</ul>
+</table>
 {% endblock %}

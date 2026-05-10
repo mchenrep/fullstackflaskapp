@@ -1,8 +1,11 @@
 from flask import Flask
-from flask import render_template, redirect, url_for, request, abort
+from flask import render_template, redirect, url_for, request, abort, flash
+import os
 from service import TransactionService
 
 app = Flask(__name__)
+app.secret_key = os.getenv('SECRET_KEY')
+
 service = TransactionService()
 service.start()
 
@@ -21,13 +24,21 @@ def transfer():
             to_account = int(request.form["to"])
             from_account = int(request.form["from"])
             amount = int(request.form["amount"])
+            
+            if to_account == from_account:
+                flash("Cannot transfer to same account")
+                return redirect(url_for("error"))
 
             if amount <= 0:
+                flash("Amount cannot be < 0")
                 return redirect(url_for("error"))
 
             # submit task to back end
             service.submit_task(from_account, to_account, amount)
             
+            # flash success message before redirect
+            flash("Transfer request accepted.")
+
             # redirect to transfer request success page
             return redirect(url_for(
                 "success",
