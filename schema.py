@@ -32,7 +32,7 @@ cursor.execute(
         timestamp TEXT
     )
     '''
-) # timestamp is stored as TEXT in db but converted using .datetime() for operations outside of db
+)
 
 connection.commit()
 cursor.close()

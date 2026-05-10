@@ -69,12 +69,13 @@ def accounts():
 @app.route("/account/<int:id>")
 def account(id):
     details = service.get_account_by_id(id)
-    
+    transactions = service.get_transactions_by_id(id)
+
     if details is None:
         # if account doesn't exist, throw 404 error
         abort(404)
     
-    return render_template("account.html", details=details)
+    return render_template("account.html", details=details, transactions=transactions)
     
 if __name__ == "__main__":
     app.run(debug=True)
