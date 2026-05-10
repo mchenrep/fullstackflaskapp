@@ -108,7 +108,7 @@ class TransactionService:
             cursor.close()
             connection.close()
 
-    def get_accounts(self):
+    def get_accounts(self) -> list[dict]:
         '''
             Gets all accounts from the 'accounts' table in the db.
         '''
@@ -128,7 +128,7 @@ class TransactionService:
             cursor.close()
             connection.close()
 
-    def get_account_by_id(self, id):
+    def get_account_by_id(self, id) -> dict:
         '''
             Gets account details from a single account from the 'accounts' table in the db based on id.
         '''
@@ -149,7 +149,11 @@ class TransactionService:
             cursor.close()
             connection.close()    
 
-    def validate_transaction(self, to_account, from_account, amount):
+    def validate_transaction(self, to_account, from_account, amount) -> bool:
+        '''
+            Helper function to validate transactions
+            - Raises ValueError for: same account, account(s) do not exist, or overdraft (amount > from balance)
+        '''
         connection, cursor = self.connect()
         
         # Check if transfer is to same account
@@ -181,6 +185,28 @@ class TransactionService:
             
             # If all checks pass, return True
             return True
+        except Exception as e:
+            logging.error(e)
+            raise 
+        finally:
+            cursor.close()
+            connection.close()
+
+    def get_transactions_by_id(self, id) -> list[dict]:
+        '''
+            Gets all transactions from the 'transactions' table where 'id' is either the to or from account
+        '''
+        connection, cursor = self.connect()
+
+        try:
+            cursor.execute('''
+                SELECT *
+                FROM transactions
+                WHERE ? IN (to_account, from_account)
+                ORDER BY timestamp DESC
+            ''', (id,))
+            transactions = cursor.fetchall()
+            return transactions
         except Exception as e:
             logging.error(e)
             raise 

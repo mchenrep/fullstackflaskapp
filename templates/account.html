@@ -4,4 +4,24 @@
     <h1>{{ details["name"] }}</h1>
     <p>id: {{ details["id"] }}</p>
     <p>balance: {{ details["balance"] }}</p>
+
+    <h1>Transaction History</h1>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Amount</th>
+            <th>Timestamp</th>
+        </tr>
+        {% for transaction in transactions %}
+        <tr>
+            <td>{{ transaction["id"] }}</td>
+            <td>{{ transaction["from_account"] }}</td>
+            <td>{{ transaction["to_account"] }}</td>
+            <td>{{ transaction["amount"] }}</td>
+            <td>{{ transaction["timestamp"] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
 {% endblock %}
