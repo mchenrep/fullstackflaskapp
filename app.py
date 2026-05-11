@@ -1,8 +1,10 @@
 from flask import Flask
 from flask import render_template, redirect, url_for, request, abort, flash
 import os
+from dotenv import load_dotenv
 from service import TransactionService
 
+load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
 
