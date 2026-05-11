@@ -9,6 +9,7 @@ app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
 
 service = TransactionService()
+service.start()
 
 @app.route("/")
 def home():
@@ -80,5 +81,4 @@ def about():
     return render_template("about.html")
     
 if __name__ == "__main__":
-    service.start()
     app.run(debug=True, use_reloader=False)
