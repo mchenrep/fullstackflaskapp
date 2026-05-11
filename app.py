@@ -26,11 +26,11 @@ def transfer():
             amount = int(request.form["amount"])
             
             if to_account == from_account:
-                flash("Cannot transfer to same account")
+                flash("Cannot transfer to same account.")
                 return redirect(url_for("error"))
 
             if amount <= 0:
-                flash("Amount cannot be < 0")
+                flash("Amount cannot be < 0.")
                 return redirect(url_for("error"))
 
             # submit task to back end
@@ -48,6 +48,7 @@ def transfer():
             ))
         except:
             # return error page for any errors
+            flash("An error occurred.")
             return redirect(url_for("error"))
 
 @app.route("/success")
@@ -76,6 +77,10 @@ def account(id):
         abort(404)
     
     return render_template("account.html", details=details, transactions=transactions)
+
+@app.route("/about")
+def about():
+    return render_template("about.html")
     
 if __name__ == "__main__":
     app.run(debug=True)
