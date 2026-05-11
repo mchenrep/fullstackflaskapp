@@ -54,7 +54,10 @@ Some limitations must be acknowledged for this project because it is mainly mean
 ```git clone https://github.com/mchenrep/fullstackflaskapp```  
 2. Create virtual environment and install all dependencies from requirements.txt  
 ```pip install requirements.txt```
-3. Run the Flask app  
+3. Initialize database and seed it
+```python .\schema.py```
+```python .\seed.py```
+4. Run the Flask app  
 ```python .\app.py```
 
 ## Future Improvements
