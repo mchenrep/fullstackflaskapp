@@ -1,18 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
+    <h1>Detail View</h1>
     <div class="card">
-        <div class="card-body">
-            <h1 class="card-header">{{ details["name"] }}</h1>
-            <p class="card-text">id: {{ details["id"] }}</p>
-            <p class="card-text">balance: {{ details["balance"] }}</p>
-        </div>
-        
+        <h1 class="card-header">{{ details["name"] }}</h1>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">ID: {{ details["id"] }}</li>
+            <li class="list-group-item">Balance: {{ details["balance"] }}</li>
+        </ul> 
     </div>
+    
     
     <h1>Transaction History</h1>
     {% if transactions %}
-        <table class="table table-hover table-bordered">
+        <table class="table table-hover table-striped">
             <tr>
                 <th>Direction</th>
                 <th>ID</th>
@@ -33,7 +34,7 @@
                 <td>{{ transaction["id"] }}</td>
                 <td>{{ transaction["from_account"] }}</td>
                 <td>{{ transaction["to_account"] }}</td>
-                <td>{{ transaction["amount"] }}</td>
+                <td>${{ transaction["amount"] }}</td>
                 <td>{{ transaction["timestamp"] }}</td>
             </tr>
             {% endfor %}

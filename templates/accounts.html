@@ -12,7 +12,7 @@
         <tr>
             <td><a>{{ account["id"] }}</a></td>
             <td><a>{{ account["name"] }}</a></td>
-            <td><a>{{ account["balance"] }}</a></td>
+            <td><a>${{ account["balance"] }}</a></td>
             <td><a href="{{ url_for('account', id=account['id']) }}">View</a></td>
         </tr>
     {% endfor %}
