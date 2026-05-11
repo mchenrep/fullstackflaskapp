@@ -9,7 +9,6 @@ app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
 
 service = TransactionService()
-service.start()
 
 @app.route("/")
 def home():
@@ -25,12 +24,8 @@ def transfer():
             # validate form
             to_account = int(request.form["to"])
             from_account = int(request.form["from"])
-            amount = int(request.form["amount"])
+            amount = float(request.form["amount"])
             
-            if to_account == from_account:
-                flash("Cannot transfer to same account.")
-                return redirect(url_for("error"))
-
             if amount <= 0:
                 flash("Amount cannot be < 0.")
                 return redirect(url_for("error"))
@@ -48,7 +43,7 @@ def transfer():
                 from_account=from_account,
                 amount=amount
             ))
-        except:
+        except Exception as e:
             # return error page for any errors
             flash("An error occurred.")
             return redirect(url_for("error"))
@@ -85,4 +80,5 @@ def about():
     return render_template("about.html")
     
 if __name__ == "__main__":
-    app.run(debug=True)
+    service.start()
+    app.run(debug=True, use_reloader=False)

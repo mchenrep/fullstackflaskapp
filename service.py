@@ -5,7 +5,10 @@ from queue import Queue
 import logging
 
 # Logging setup
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(threadName)s | %(message)s"
+)
 
 class TransactionService:
     def __init__(self, worker_count=4):
