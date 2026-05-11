@@ -1,0 +1,10 @@
+bank.db
+notes.md
+test.py
+service.log
+.env
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="text-center mb-5">
+        <h1 class="display-4">Asynchronous Banking Transaction System Showcase</h1>
+    </div>
+    <p class="lead">
+        A Flask-based banking platform demonstration that features
+        multithreaded transaction processing, SQLite persistence, 
+        and "worker-queue architecture". 
+    </p>
+    <div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Concurrency</h5>
+                <p class="card-text">
+                    Multithreading is used to process all transactions asynchronously through a worker-queue task system.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">SQLite Usage</h5>
+                <p class="card-text">
+                    Data is stored via Python's SQLite3 allowing for persistent logging to provide complete account history and audit tracking.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Where Flask Comes Into Play</h5>
+                <p class="card-text">
+                    Flask routes integrate with a dedicated backend service for clear seperation of work.
+                </p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
