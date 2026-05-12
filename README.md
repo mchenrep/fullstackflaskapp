@@ -76,8 +76,6 @@ Transfer:
 Account Details:  
 ![Account Detail View](screenshots/detailview.png)  
 
-
-
 ## Future Improvements
 If I were to improve this project for the future, here are a list of things I would implement:  
 1. Persistent queue system  
