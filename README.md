@@ -40,7 +40,7 @@ Account Details:
 ## System Design
 The request flow looks something like:  
 ```
-Flask recieves request for transfer and validates input -> request gets added to queue -> worker thread processes transaction (further validation occurs) -> SQLite database gets updated -> transaction history and account details get updated in UI   
+Flask recieves request for transfer and validates input -> request gets added to queue -> worker thread processes transaction (further validation occurs) -> SQLite database gets updated -> transaction history and account details reflected in UI   
 ```
 
 ## Technology Used
