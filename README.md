@@ -1,7 +1,32 @@
 # Full-stack Flask Asynchronous Banking Transaction Demo
 Live Demo: [Click Here](https://asyncflaskbankdemo.onrender.com)
 
-This Flask-based application features a concurrent backend service that asynchronously processes banking transactions using worker threads and a task queue. The frontend uses Bootstrap5 and Jinja2 in its templates for managing accounts, submitting transfers, and viewing transaction history through a clean and responsive web interface.  
+This full-stack Flask application features a dedicated backend service to asynchronously process transactions and is routed using Flask and Jinja2 templates to showcase a clean and responsive Bootstrap5 HTML frontend. 
+
+## How to Run
+1. Clone repository  
+```git clone https://github.com/mchenrep/fullstackflaskapp```  
+2. Create virtual environment and install all dependencies from requirements.txt  
+```pip install requirements.txt```
+3. Initialize database and seed it  
+```python .\schema.py```  
+```python .\seed.py```  
+4. Run the Flask app  
+```python .\app.py```
+
+## Screenshots
+Home:  
+![Home Page](screenshots/homepage.png)  
+
+Accounts:  
+![Accounts View](screenshots/accounts.png)  
+
+Transfer:  
+![Transfer](screenshots/transfer.png)
+![Success](screenshots/success.png)
+
+Account Details:  
+![Account Detail View](screenshots/detailview.png)  
 
 ## Features
 - Asynchronous transaction processing  
@@ -17,9 +42,6 @@ The request flow looks something like:
 ```
 Flask recieves request for transfer and validates input -> request gets added to queue -> worker thread processes transaction (further validation occurs) -> SQLite database gets updated -> transaction history and account details get updated in UI   
 ```
-
-## Asychronous Design
-An asynchronous design is used here for concurrency. The application uses a multithreaded worker system to asynchronously process transaction requests outside of Flask then uses a lock to serialize SQLite operations to prevent race conditions from occurring.  
 
 ## Technology Used
 Backend:  
@@ -49,34 +71,7 @@ Transactions:
 - timestamp
 
 ## Limitations/Simplified Deployment Build
-Some limitations must be acknowledged for this project because it is mainly meant for demonstration. Some of these include using SQLite for the database, which is not ideal for high concurrency, the queue is stored in memory (thus, not persistent), and worker threads will restart if the app process does.
-
-The asynchronous worker-queue system was designed for concurrency simulation, but was simplified in production due to stateless deployment constraints on Render (Gunicorn multi-process environment). The production version executes transactions synchronously to ensure reliability, while maintaining the original async design for reference.
-
-## How to Run
-1. Clone repository  
-```git clone https://github.com/mchenrep/fullstackflaskapp```  
-2. Create virtual environment and install all dependencies from requirements.txt  
-```pip install requirements.txt```
-3. Initialize database and seed it  
-```python .\schema.py```  
-```python .\seed.py```  
-4. Run the Flask app  
-```python .\app.py```
-
-## Screenshots
-Home:  
-![Home Page](screenshots/homepage.png)  
-
-Accounts:  
-![Accounts View](screenshots/accounts.png)  
-
-Transfer:  
-![Transfer](screenshots/transfer.png)
-![Success](screenshots/success.png)
-
-Account Details:  
-![Account Detail View](screenshots/detailview.png)  
+Some limitations faced during this project include an in-memory queue, using SQLite as a database (inefficient for high concurrency), and clashing between the deployment environment and the backend service. Because this is only a demo, I chose to use SQLite and an in-memory queue which was unable to be deployed in Render's stateless multiprocess environment, that is why the demo deployed on Render uses a serialized (sychronous) transaction system instead. In retrospect, I would have implemented a persistent queue system (something disk safe like Redis) and migrated my database to another relational one known for high concurrency like Postgres or MySQL. 
   
 ## Future Improvements
 If I were to improve this project for the future, here are a list of things I would implement:  
