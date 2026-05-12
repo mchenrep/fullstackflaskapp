@@ -63,6 +63,19 @@ Some limitations must be acknowledged for this project because it is mainly mean
 ```python .\app.py```
 
 ## Screenshots
+Home:  
+![Home Page](screenshots/homepage.png)  
+
+Accounts:  
+![Accounts View](screenshots/accounts.png)  
+
+Transfer:  
+![Transfer](screenshots/transfer.png)
+![Success](screenshots/success.png)
+
+Account Details:  
+![Account Detail View](screenshots/detailview.png)  
+
 
 
 ## Future Improvements
