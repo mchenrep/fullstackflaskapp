@@ -38,7 +38,7 @@ def transfer():
             if USE_ASYNC:
                 service.submit_task(from_account, to_account, amount)
             else:
-                service.handle_transaction({"from_account":from_account, "to_account":to_account, "amount":amount})
+                service.handle_transaction({"from":from_account, "to":to_account, "amount":amount})
             
             # flash success message before redirect
             flash("Transfer request accepted.")
