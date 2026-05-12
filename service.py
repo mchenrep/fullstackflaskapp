@@ -100,6 +100,7 @@ class TransactionService:
                     ''', (amount, to_account)) 
 
                     # Commit changes
+                    logging.info("INSERT EXECUTED")
                     connection.commit()
         except Exception as e:
             # Rollback if exception occurs
