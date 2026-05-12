@@ -48,8 +48,10 @@ Transactions:
 - amount
 - timestamp
 
-## Limitations
-Some limitations must be acknowledged for this project because it is mainly meant for demonstration. Some of these include using SQLite for the database, which is not ideal for high concurrency, the queue is stored in memory (thus, not persistent), and worker threads will restart if the app process does.  
+## Limitations/Simplified Deployment Build
+Some limitations must be acknowledged for this project because it is mainly meant for demonstration. Some of these include using SQLite for the database, which is not ideal for high concurrency, the queue is stored in memory (thus, not persistent), and worker threads will restart if the app process does.
+
+The asynchronous worker-queue system was designed for concurrency simulation, but was simplified in production due to stateless deployment constraints on Render (Gunicorn multi-process environment). The production version executes transactions synchronously to ensure reliability, while maintaining the original async design for reference.
 
 ## How to Run
 1. Clone repository  
@@ -75,7 +77,7 @@ Transfer:
 
 Account Details:  
 ![Account Detail View](screenshots/detailview.png)  
-
+  
 ## Future Improvements
 If I were to improve this project for the future, here are a list of things I would implement:  
 1. Persistent queue system  
