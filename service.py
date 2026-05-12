@@ -100,7 +100,6 @@ class TransactionService:
                     ''', (amount, to_account)) 
 
                     # Commit changes
-                    logging.info("INSERT EXECUTED")
                     connection.commit()
         except Exception as e:
             # Rollback if exception occurs
@@ -169,7 +168,7 @@ class TransactionService:
             cursor.execute('''
                 SELECT COUNT(*) 
                 FROM accounts 
-                WHERE to_account = ? OR from_account = ?;
+                WHERE id IN (?, ?);
             ''', (to_account, from_account)) # query returns count of matched ids in db (2 = both exist, 1 = 1 exists, 0 = none exists)
             if cursor.fetchone()[0] != 2:
                 raise ValueError("1 or more accounts don't exist")
