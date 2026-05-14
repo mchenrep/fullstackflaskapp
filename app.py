@@ -11,9 +11,6 @@ app.secret_key = os.getenv('SECRET_KEY')
 service = TransactionService()
 service.start()
 
-# Toggles off asynchronous transfer requests (for deployment, see more in README)
-USE_ASYNC=False
-
 @app.route("/")
 def home():
     return render_template("home.html")
@@ -35,10 +32,7 @@ def transfer():
                 return redirect(url_for("error"))
 
             # submit task to back end
-            if USE_ASYNC:
-                service.submit_task(from_account, to_account, amount)
-            else:
-                service.handle_transaction({"from":from_account, "to":to_account, "amount":amount})
+            service.submit_task(from_account, to_account, amount)
             
             # flash success message before redirect
             flash("Transfer request accepted.")
