@@ -1,4 +1,5 @@
 import sqlite3
+import psycopg2
 
 # Connect to 'bank.db' database
 connection = sqlite3.connect('bank.db')
