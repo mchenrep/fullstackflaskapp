@@ -81,10 +81,6 @@ def account(id):
         abort(404)
     
     return render_template("account.html", details=details, transactions=transactions)
-
-@app.route("/about")
-def about():
-    return render_template("about.html")
     
 # Debug TEST
 @app.route("/debug/transactions")
