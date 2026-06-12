@@ -1,14 +1,16 @@
 import os
 import psycopg2
+from dotenv import load_dotenv
 
-# Connect to postgres database
+# Load environmental variables
+load_dotenv()
 DB_NAME = os.getenv('DB_NAME')
 DB_USER = os.getenv('DB_USER')
 DB_PASSWORD = os.getenv('DB_PASSWORD')
 DB_HOST = os.getenv('DB_HOST')
 DB_PORT = os.getenv('DB_PORT')
 
-
+# Connect to postgres database
 connection = psycopg2.connect(
     dbname = DB_NAME,
     user = DB_USER,
@@ -31,7 +33,7 @@ cursor.execute('''
 # Create table schemas
 cursor.execute('''
     CREATE TABLE accounts (
-        id INTEGER PRIMARY KEY,
+        id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
         name TEXT NOT NULL,
         balance REAL
     )
@@ -40,7 +42,7 @@ cursor.execute('''
 cursor.execute(
     '''
     CREATE TABLE transactions (
-        id INTEGER PRIMARY KEY,
+        id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
         from_account INTEGER,
         to_account INTEGER,
         amount REAL,

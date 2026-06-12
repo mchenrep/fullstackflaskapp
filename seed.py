@@ -1,6 +1,24 @@
-import sqlite3
+import os
+import psycopg2
+from dotenv import load_dotenv
 
-connection = sqlite3.connect('bank.db')
+# Load environmental variables
+load_dotenv()
+DB_NAME = os.getenv('DB_NAME')
+DB_USER = os.getenv('DB_USER')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
+DB_HOST = os.getenv('DB_HOST')
+DB_PORT = os.getenv('DB_PORT')
+
+# Connect to postgres database
+connection = psycopg2.connect(
+    dbname = DB_NAME,
+    user = DB_USER,
+    password = DB_PASSWORD,
+    host = DB_HOST,
+    port = DB_PORT
+)
+
 cursor = connection.cursor()
 
 dataset = [
@@ -11,7 +29,7 @@ dataset = [
 ]
 
 cursor.executemany('''
-    INSERT INTO accounts (name, balance) VALUES (?,?)
+    INSERT INTO accounts (name, balance) VALUES (%s,%s)
 ''', dataset)
 
 connection.commit()
