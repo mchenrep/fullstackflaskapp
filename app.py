@@ -26,8 +26,8 @@ def transfer():
     if request.method == "POST":
         try:
             # validate form
-            to_account = int(request.form["to"])
             from_account = int(request.form["from"])
+            to_account = int(request.form["to"])
             amount = float(request.form["amount"])
             
             if amount <= 0:
@@ -46,8 +46,8 @@ def transfer():
             # redirect to transfer request success page
             return redirect(url_for(
                 "success",
-                to_account=to_account,
                 from_account=from_account,
+                to_account=to_account,
                 amount=amount
             ))
         except Exception as e:
@@ -57,10 +57,10 @@ def transfer():
 
 @app.route("/success")
 def success():
-    to_account = request.args.get("to_account")
     from_account = request.args.get("from_account")
+    to_account = request.args.get("to_account")
     amount = request.args.get("amount")
-    return render_template("success.html", to_account = to_account, from_account = from_account, amount = amount)
+    return render_template("success.html", from_account = from_account, to_account = to_account, amount = amount)
 
 @app.route("/error")
 def error():
