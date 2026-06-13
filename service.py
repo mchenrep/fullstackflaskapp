@@ -1,5 +1,6 @@
 import os
 import psycopg2
+from psycopg2.extras import DictCursor
 from threading import Thread
 from datetime import datetime
 from queue import Queue
@@ -60,7 +61,7 @@ class TransactionService:
     def connect(self):
         '''
             Helper function to connect to the PostgreSQL database
-            - Returns cursor
+            - Returns the connection object
         '''
         DB_NAME = os.getenv('DB_NAME')
         DB_USER = os.getenv('DB_USER')
@@ -76,16 +77,14 @@ class TransactionService:
             port = DB_PORT
         )
 
-        cursor = connection.cursor()
-
-        return connection, cursor
+        return connection
 
     def handle_transaction(self, task):
         '''
             Function to handle transactions
             - Logs them into database under 'transactions' table, then updates to_account and from_account
         '''
-        connection, cursor = self.connect()
+        connection = self.connect()
         from_account, to_account, amount = task["from"], task["to"], task["amount"]
         
         # Validate transaction
@@ -93,93 +92,97 @@ class TransactionService:
         
         # Execute transaction
         try:
-            # Validate existence of both accounts
-            cursor.execute("""
-                SELECT COUNT(*)
-                FROM accounts
-                WHERE id IN (%s, %s)
-            """, (from_account, to_account))
+            # Context manager cursor
+            with connection.cursor() as cursor:
+                # Validate existence of both accounts
+                cursor.execute("""
+                    SELECT COUNT(*)
+                    FROM accounts
+                    WHERE id IN (%s, %s)
+                """, (from_account, to_account))
 
-            if cursor.fetchone()[0] != 2:
-                raise ValueError("One or more accounts do not exist")
+                if cursor.fetchone()[0] != 2:
+                    raise ValueError("One or more accounts do not exist")
 
-            # Update 'From' balance
-            cursor.execute('''
-                UPDATE accounts 
-                SET balance = balance - %s
-                WHERE id = %s
-                AND balance >= %s   
-            ''', (amount, from_account, amount)) 
+                # Update 'From' balance
+                cursor.execute('''
+                    UPDATE accounts 
+                    SET balance = balance - %s
+                    WHERE id = %s
+                    AND balance >= %s   
+                ''', (amount, from_account, amount)) 
 
-            # Validate
-            if cursor.rowcount == 0:
-                raise ValueError("Insufficient funds")
+                # Validate
+                if cursor.rowcount == 0:
+                    raise ValueError("Insufficient funds")
 
-            # Update 'To' balance
-            cursor.execute('''
-                UPDATE accounts 
-                SET balance = balance + %s
-                WHERE id = %s    
-            ''', (amount, to_account)) 
+                # Update 'To' balance
+                cursor.execute('''
+                    UPDATE accounts 
+                    SET balance = balance + %s
+                    WHERE id = %s    
+                ''', (amount, to_account)) 
 
-            # Add transaction to 'transactions' tables
-            cursor.execute("""
-                INSERT INTO transactions
-                (from_account, to_account, amount, timestamp)
-                VALUES (%s, %s, %s, %s)
-            """, (from_account, to_account, amount, datetime.now()))
-            
-            # Commit changes
-            connection.commit()
+                # Add transaction to 'transactions' tables
+                cursor.execute("""
+                    INSERT INTO transactions
+                    (from_account, to_account, amount, timestamp)
+                    VALUES (%s, %s, %s, %s)
+                """, (from_account, to_account, amount, datetime.now()))
+                
+                # Commit changes
+                connection.commit()
         except Exception as e:
             # Rollback if exception occurs
             connection.rollback()
             logging.error(e)
             raise 
         finally:
-            # Close connection and cursor
-            cursor.close()
+            # Close connection
             connection.close()
 
     def get_accounts(self) -> list[dict]:
         '''
             Gets all accounts from the 'accounts' table in the db.
         '''
-        connection, cursor = self.connect()
+        connection = self.connect()
 
         try:
-            cursor.execute('''
-                SELECT *
-                FROM accounts
-            ''')
-            accounts = cursor.fetchall()
-            return accounts
+            # use DictCursor to return dictionary like rows
+            with connection.cursor(cursor_factory=DictCursor) as cursor:
+                cursor.execute('''
+                    SELECT *
+                    FROM accounts
+                ''')
+                accounts = cursor.fetchall()
+                print(accounts)
+                return accounts
         except Exception as e:
             logging.error(e)
             raise 
         finally:
-            cursor.close()
             connection.close()
 
     def get_account_by_id(self, id) -> dict:
         '''
             Gets account details from a single account from the 'accounts' table in the db based on id.
         '''
-        connection, cursor = self.connect()
+        connection = self.connect()
         
         try:
-            cursor.execute('''
-                SELECT *
-                FROM accounts
-                WHERE id = %s
-            ''', (id,))
-            account_details = cursor.fetchone()
-            return account_details
+            # use DictCursor to return dictionary like rows
+            with connection.cursor(cursor_factory=DictCursor) as cursor:
+                cursor.execute('''
+                    SELECT *
+                    FROM accounts
+                    WHERE id = %s
+                ''', (id,))
+                account_details = cursor.fetchone()
+                return account_details
         except Exception as e:
             logging.error(e)
             raise 
         finally:
-            cursor.close()
             connection.close()    
 
     def validate_transaction(self, from_account, to_account, amount) -> bool:
@@ -200,21 +203,22 @@ class TransactionService:
         '''
             Gets all transactions from the 'transactions' table where 'id' is either the to or from account
         '''
-        connection, cursor = self.connect()
+        connection = self.connect()
 
         try:
-            cursor.execute('''
-                SELECT *
-                FROM transactions
-                WHERE to_account = %s
-                OR from_account = %s
-                ORDER BY timestamp DESC
-            ''', (id,))
-            transactions = cursor.fetchall()
-            return transactions
+            # use DictCursor to return dictionary like rows
+            with connection.cursor(cursor_factory=DictCursor) as cursor:
+                cursor.execute('''
+                    SELECT *
+                    FROM transactions
+                    WHERE to_account = %s
+                    OR from_account = %s
+                    ORDER BY timestamp DESC
+                ''', (id,id))
+                transactions = cursor.fetchall()
+                return transactions
         except Exception as e:
             logging.error(e)
             raise 
         finally:
-            cursor.close()
             connection.close()
