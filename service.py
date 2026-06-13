@@ -1,6 +1,7 @@
 import os
 import psycopg2
 from psycopg2.extras import DictCursor
+from psycopg2.pool import ThreadedConnectionPool
 from threading import Thread
 from datetime import datetime
 from queue import Queue
@@ -16,7 +17,15 @@ class TransactionService:
     def __init__(self, worker_count=4):
         # define workers and initialize queue
         self.worker_count = worker_count
-        self.task_queue = Queue()
+        self.task_queue = Queue(maxsize=1000)
+        self.pool = ThreadedConnectionPool(
+            1, 20,
+            dbname=os.getenv("DB_NAME"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            host=os.getenv("DB_HOST"),
+            port=os.getenv("DB_PORT")
+        )
         self.workers = []
  
     # ------------------------------------------- Multithreading Functions -------------------------------------------------
@@ -39,7 +48,7 @@ class TransactionService:
             "to" : to_account,
             "amount": amount
         }
-        self.task_queue.put(task)
+        self.task_queue.put(task, block=True, timeout=2)
 
     def loop(self):
         '''
@@ -61,28 +70,15 @@ class TransactionService:
     def connect(self):
         '''
             Helper function to connect to the PostgreSQL database
-            - Returns the connection object
+            - Returns connection from the connection pool
         '''
-        DB_NAME = os.getenv('DB_NAME')
-        DB_USER = os.getenv('DB_USER')
-        DB_PASSWORD = os.getenv('DB_PASSWORD')
-        DB_HOST = os.getenv('DB_HOST')
-        DB_PORT = os.getenv('DB_PORT')
 
-        connection = psycopg2.connect(
-            dbname = DB_NAME,
-            user = DB_USER,
-            password = DB_PASSWORD,
-            host = DB_HOST,
-            port = DB_PORT
-        )
-
-        return connection
+        return self.pool.getconn()
 
     def handle_transaction(self, task):
         '''
             Function to handle transactions
-            - Logs them into database under 'transactions' table, then updates to_account and from_account
+            - Updates 'to_account' and 'from_account' and then logs them into database under 'transactions' table,
         '''
         connection = self.connect()
         from_account, to_account, amount = task["from"], task["to"], task["amount"]
@@ -92,54 +88,50 @@ class TransactionService:
         
         # Execute transaction
         try:
-            # Context manager cursor
-            with connection.cursor() as cursor:
-                # Validate existence of both accounts
-                cursor.execute("""
-                    SELECT COUNT(*)
-                    FROM accounts
-                    WHERE id IN (%s, %s)
-                """, (from_account, to_account))
+            # Use context manager for both connection and cursor
+            with connection:
+                with connection.cursor() as cursor:
+                    # Validate existence of both accounts
+                    cursor.execute("""
+                        SELECT COUNT(*)
+                        FROM accounts
+                        WHERE id IN (%s, %s)
+                    """, (from_account, to_account))
 
-                if cursor.fetchone()[0] != 2:
-                    raise ValueError("One or more accounts do not exist")
+                    if cursor.fetchone()[0] != 2:
+                        raise ValueError("One or more accounts do not exist")
 
-                # Update 'From' balance
-                cursor.execute('''
-                    UPDATE accounts 
-                    SET balance = balance - %s
-                    WHERE id = %s
-                    AND balance >= %s   
-                ''', (amount, from_account, amount)) 
+                    # Update 'From' balance
+                    cursor.execute('''
+                        UPDATE accounts 
+                        SET balance = balance - %s
+                        WHERE id = %s
+                        AND balance >= %s   
+                    ''', (amount, from_account, amount)) 
 
-                # Validate
-                if cursor.rowcount == 0:
-                    raise ValueError("Insufficient funds")
+                    # Validate
+                    if cursor.rowcount == 0:
+                        raise ValueError("Insufficient funds")
 
-                # Update 'To' balance
-                cursor.execute('''
-                    UPDATE accounts 
-                    SET balance = balance + %s
-                    WHERE id = %s    
-                ''', (amount, to_account)) 
+                    # Update 'To' balance
+                    cursor.execute('''
+                        UPDATE accounts 
+                        SET balance = balance + %s
+                        WHERE id = %s    
+                    ''', (amount, to_account)) 
 
-                # Add transaction to 'transactions' tables
-                cursor.execute("""
-                    INSERT INTO transactions
-                    (from_account, to_account, amount, timestamp)
-                    VALUES (%s, %s, %s, %s)
-                """, (from_account, to_account, amount, datetime.now()))
-                
-                # Commit changes
-                connection.commit()
+                    # Add transaction to 'transactions' tables
+                    cursor.execute("""
+                        INSERT INTO transactions
+                        (from_account, to_account, amount, timestamp)
+                        VALUES (%s, %s, %s, %s)
+                    """, (from_account, to_account, amount, datetime.now()))
         except Exception as e:
-            # Rollback if exception occurs
-            connection.rollback()
             logging.error(e)
             raise 
         finally:
             # Close connection
-            connection.close()
+            self.pool.putconn(connection)
 
     def get_accounts(self) -> list[dict]:
         '''
@@ -148,20 +140,20 @@ class TransactionService:
         connection = self.connect()
 
         try:
-            # use DictCursor to return dictionary like rows
-            with connection.cursor(cursor_factory=DictCursor) as cursor:
-                cursor.execute('''
-                    SELECT *
-                    FROM accounts
-                ''')
-                accounts = cursor.fetchall()
-                print(accounts)
-                return accounts
+            with connection:
+                # use DictCursor to return dictionary like rows
+                with connection.cursor(cursor_factory=DictCursor) as cursor:
+                    cursor.execute('''
+                        SELECT *
+                        FROM accounts
+                    ''')
+                    accounts = cursor.fetchall()
+                    return accounts
         except Exception as e:
             logging.error(e)
             raise 
         finally:
-            connection.close()
+            self.pool.putconn(connection)
 
     def get_account_by_id(self, id) -> dict:
         '''
@@ -170,20 +162,21 @@ class TransactionService:
         connection = self.connect()
         
         try:
-            # use DictCursor to return dictionary like rows
-            with connection.cursor(cursor_factory=DictCursor) as cursor:
-                cursor.execute('''
-                    SELECT *
-                    FROM accounts
-                    WHERE id = %s
-                ''', (id,))
-                account_details = cursor.fetchone()
-                return account_details
+            with connection:
+                # use DictCursor to return dictionary like rows
+                with connection.cursor(cursor_factory=DictCursor) as cursor:
+                    cursor.execute('''
+                        SELECT *
+                        FROM accounts
+                        WHERE id = %s
+                    ''', (id,))
+                    account_details = cursor.fetchone()
+                    return account_details
         except Exception as e:
             logging.error(e)
             raise 
         finally:
-            connection.close()    
+            self.pool.putconn(connection)   
 
     def validate_transaction(self, from_account, to_account, amount) -> bool:
         '''
@@ -221,4 +214,4 @@ class TransactionService:
             logging.error(e)
             raise 
         finally:
-            connection.close()
+            self.pool.putconn(connection)
