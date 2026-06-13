@@ -91,13 +91,6 @@ class TransactionService:
             # Use context manager for both connection and cursor
             with connection:
                 with connection.cursor() as cursor:
-                    # Validate existence of both accounts
-                    cursor.execute("""
-                        SELECT COUNT(*)
-                        FROM accounts
-                        WHERE id IN (%s, %s)
-                    """, (from_account, to_account))
-
                     if cursor.fetchone()[0] != 2:
                         raise ValueError("One or more accounts do not exist")
 
