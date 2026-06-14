@@ -1,0 +1,39 @@
+services:
+  web:
+    build: .
+    container_name: transaction-app
+
+    ports:
+      - "5000:5000"
+
+    environment:
+      DB_NAME: banking
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: db
+      DB_PORT: 5432
+
+    depends_on:
+      - db
+
+    restart: unless-stopped
+
+  db:
+    image: postgres:17
+    container_name: postgres-db
+
+    environment:
+      POSTGRES_DB: banking
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

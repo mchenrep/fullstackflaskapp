@@ -21,27 +21,18 @@ connection = psycopg2.connect(
 
 cursor = connection.cursor()
 
-# Drop tables if they exist
-cursor.execute('''
-    DROP TABLE IF EXISTS accounts;
-''')
-
-cursor.execute('''
-    DROP TABLE IF EXISTS transactions;
-''')
-
 # Create table schemas
 cursor.execute('''
-    CREATE TABLE accounts (
+    CREATE TABLE IF NOT EXISTS accounts (
         id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-        name TEXT NOT NULL,
+        name TEXT UNIQUE NOT NULL,
         balance REAL
     )
 ''')
 
 cursor.execute(
     '''
-    CREATE TABLE transactions (
+    CREATE TABLE IF NOT EXISTS transactions (
         id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
         from_account INTEGER,
         to_account INTEGER,

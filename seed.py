@@ -30,6 +30,7 @@ dataset = [
 
 cursor.executemany('''
     INSERT INTO accounts (name, balance) VALUES (%s,%s)
+    ON CONFLICT (name) DO NOTHING
 ''', dataset)
 
 connection.commit()
